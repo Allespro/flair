@@ -2,7 +2,7 @@
 *Half of an AirDrop substitute*
 
 #### What:
-Flair is written with one thing goal: make it easier to get files off an iPhone/iPad/etc.
+Flair is written with one goal: make it easier to get files off an iPhone/iPad/etc.
 
 Personally, I hate messing around with cloud file hosting or iTunes file sharing if I want a file from my phone on my computer. 
 However, I don't own a Mac and can't just AirDrop myself files. This has always been an annoyance.
