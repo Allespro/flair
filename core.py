@@ -9,6 +9,7 @@ import base64
 def main():
 
 	ip = ('192.168.2.144', 80); # change this to local ip
+
 	httpserver = server.HTTPServer(ip, requestHandler);
 	try:
 		httpserver.serve_forever()
@@ -44,8 +45,6 @@ class requestHandler(server.BaseHTTPRequestHandler):
 
 		post_data = s.rfile.read(content_length)
 
-		# print(content_length)
-
 		try:
 			json_data = json.loads(post_data)
 
@@ -61,6 +60,7 @@ class requestHandler(server.BaseHTTPRequestHandler):
 			# 				if this is present, it will be appended to the end of the filename, otherwise, only filename is used
 			# -> binary:	boolean file type flag
 			# -> data:		data to apply to action
+			# -> break:		newline on appending?
 
 			for aindex, activity in json_data.items():
 				
@@ -68,6 +68,7 @@ class requestHandler(server.BaseHTTPRequestHandler):
 
 					action = activity['ACTION']
 
+					# look for extension field
 					fext = ''
 					try:
 						fext = '.' + activity['EXT']
@@ -78,35 +79,27 @@ class requestHandler(server.BaseHTTPRequestHandler):
 					if (action == 'CREATE'):
 						open(target, 'w').close()
 
-						# print(aindex + " - " + action + " " + target)
-
 					elif (action == 'WRITE'):
 						data = activity['DATA']
 						binary =  activity['BINARY']
 
 						s.fmod_write(target, data, 'w', binary)
 
-						# print(aindex + " - " + action + " " + "DATA" + " TO " + target + (" AS BIN", " AS TEXT")[not mode_b])
-
 					elif (action == 'APPEND'):
 						data = activity['DATA']
 						binary = activity['BINARY']
 
-						try:
-							data += ('', '\n')[activity['BREAK']]
-						except Exception:
-							pass
+						if not binary:
+							try:
+								data += ('', '\n')[activity['BREAK']]
+							except Exception:
+								pass
 
 						s.fmod_write(target, data, 'a', binary)
 
-						# print(aindex + " - " + action + " " + data + " TO " + target + (" AS BIN", " AS TEXT")[not mode_b])
-
 					elif (action == 'REMOVE'):
-						# print(aindex + " - " + action + " " + target)
 						pass
 
-
-					# print("SUCCESS: " + action + " " + data + " TO " + target)
 
 				else:
 					raise Exception
@@ -117,7 +110,6 @@ class requestHandler(server.BaseHTTPRequestHandler):
 			s.end_headers()
 			return
 
-		# print(json_data)
 
 		# s.send_response(status.OK)
 		s.send_response(status.ACCEPTED)
@@ -132,6 +124,7 @@ class requestHandler(server.BaseHTTPRequestHandler):
 			f = open(file, write_mode)
 
 			if binary:
+				# convert to bytes then decode
 				b = bytes(data, 'utf-8')
 				f.write(base64.urlsafe_b64decode(b))
 
