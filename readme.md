@@ -8,8 +8,8 @@ Personally, I hate messing around with cloud file hosting or iTunes file sharing
 However, I don't own a Mac and can't just AirDrop myself files. This has always been an annoyance.
 
 One day, I was looking through Workflow/Shortcuts on iOS and noticed there was a block that would send an HTTP request to a server of
-the user's choosing. It turns out, it's possible to POST a homemade server any file you want from the sharesheet with the right
-Workflow/Shortcuts setup, which is very convinient indeed. 
+the user's choosing. It turns out, it's possible to POST a homemade server any file you want from the share sheet with the right
+Workflow/Shortcuts setup, which is very convenient indeed. 
 
 This is the receiving server. It can create files. 
 
@@ -41,7 +41,7 @@ This is intended for secured, local network use only. There is **no encryption o
 
 This is intentional, it keeps complexity down and limits processing required on the sending end.
 
-**Do not use this over the internet.**
+**Do not use this over the Internet.**
 
 **Do not use this on public or work networks.**
 
