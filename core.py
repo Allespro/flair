@@ -1,10 +1,9 @@
 from http import server
 from http import HTTPStatus as status
 
-from urllib.parse import unquote_plus as uq
-
 import json
 import base64
+import socket
 
 def main():
 
@@ -14,11 +13,14 @@ def main():
 	try:
 		httpserver.serve_forever()
 	except KeyboardInterrupt:
+		print("Goodbye.")
 		return
 
 class requestHandler(server.BaseHTTPRequestHandler):
 	# for head and get requests, reply that nothing is available
 	# there are no pages being served, so this is an easy solution
+
+	hostnames = {}
 
 	def do_HEAD(s):
 		s.send_error(status.NO_CONTENT, 'Ryanair in San Diego?')
@@ -42,6 +44,14 @@ class requestHandler(server.BaseHTTPRequestHandler):
 			s.send_response(status.LENGTH_REQUIRED)
 			s.end_headers()
 			return
+
+		sender = s.client_address[0]
+
+		if sender not in s.hostnames:
+			print("Unknown sender, resolving hostname. Please wait...")
+			s.hostnames[sender] = str(socket.gethostbyaddr(sender)[0])
+
+		sender_hostname = s.hostnames[sender]
 
 		post_data = s.rfile.read(content_length)
 
@@ -110,6 +120,7 @@ class requestHandler(server.BaseHTTPRequestHandler):
 			s.end_headers()
 			return
 
+		print(sender + " - " + sender_hostname + " - " + str(content_length) + " BYTES - OK")
 
 		# s.send_response(status.OK)
 		s.send_response(status.ACCEPTED)

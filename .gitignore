@@ -1,0 +1,5 @@
+# ignore file deposit folder and any contents
+files/*
+
+# windows :)
+Thumbs.db
