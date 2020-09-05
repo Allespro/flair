@@ -17,11 +17,10 @@ def main():
 		return
 
 class requestHandler(server.BaseHTTPRequestHandler):
-	# for head and get requests, reply that nothing is available
-	# there are no pages being served, so this is an easy solution
-
 	hostnames = {}
 
+	# for head and get requests, reply that nothing is available
+	# there are no pages being served, so this is an easy solution
 	def do_HEAD(s):
 		s.send_error(status.NO_CONTENT, 'Ryanair in San Diego?')
 		s.end_headers()
@@ -48,8 +47,13 @@ class requestHandler(server.BaseHTTPRequestHandler):
 		sender = s.client_address[0]
 
 		if sender not in s.hostnames:
-			print("Unknown sender, resolving hostname. Please wait...")
-			s.hostnames[sender] = str(socket.gethostbyaddr(sender)[0])
+			print("Unknown sender [" + sender + "], resolving hostname. Please wait...")
+			try:
+				s.hostnames[sender] = str(socket.gethostbyaddr(sender)[0])
+				print("Identified [" + sender + "] as \"" + s.hostnames[sender] + "\"")
+			except Exception as e: # something went wrong, probably a timeout
+				print("Error resolving hostname!")
+				s.hostnames[sender] = "Unknown"
 
 		sender_hostname = s.hostnames[sender]
 
@@ -80,10 +84,12 @@ class requestHandler(server.BaseHTTPRequestHandler):
 
 					# look for extension field
 					fext = ''
+
 					try:
 						fext = '.' + activity['EXT']
 					except Exception:
 						pass
+
 					target = 'files/' + activity['TARGET'] + fext
 
 					if (action == 'CREATE'):
