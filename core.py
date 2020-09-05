@@ -77,6 +77,8 @@ class requestHandler(server.BaseHTTPRequestHandler):
 		else:
 			src_type = 'O'
 
+		aindex = ''
+
 		try:
 			json_data = json.loads(post_data)
 
@@ -168,7 +170,8 @@ class requestHandler(server.BaseHTTPRequestHandler):
 
 		except Exception as e:
 			print("ERROR: " + str(e))
-			s.send_response(status.BAD_REQUEST)
+			print(sender + " - " + sender_hostname + " - " + src_type + " - " + str(content_length) + " BYTES - FAIL")
+			s.send_response(status.BAD_REQUEST, ("ERROR AT \'" + aindex + "\': " + str(e)))
 			s.end_headers()
 			return
 
