@@ -5,11 +5,14 @@ import json
 import base64
 import socket
 
+from os import path
+
 def main():
 
 	ip = ('192.168.2.144', 80); # change this to local ip
 
 	httpserver = server.HTTPServer(ip, requestHandler);
+
 	try:
 		httpserver.serve_forever()
 	except KeyboardInterrupt:
@@ -34,8 +37,6 @@ class requestHandler(server.BaseHTTPRequestHandler):
 		s.do_POST()
 
 	def do_POST(s):
-		# print(s.headers)
-
 		# ensure there's a length field provided
 		try:
 			content_length = int(s.headers['Content-Length'])
@@ -60,9 +61,24 @@ class requestHandler(server.BaseHTTPRequestHandler):
 		post_data = s.rfile.read(content_length)
 
 		try:
-			json_data = json.loads(post_data)
+			ua = s.headers["User-Agent"]
+		except Exception:
+			print("ERROR: NO USER AGENT")
+			s.send_response(status.BAD_REQUEST)
+			s.end_headers()
+			return
 
-			# print(json_data)
+		# print(ua)
+
+		if 'Workflow' in ua:
+			src_type = 'WF'
+		elif 'Shortcuts' in ua:
+			src_type = 'SC'
+		else:
+			src_type = 'O'
+
+		try:
+			json_data = json.loads(post_data)
 
 			# not all parameters will be used for all requests - unused data is ignored and may be omitted
 			#
@@ -73,6 +89,7 @@ class requestHandler(server.BaseHTTPRequestHandler):
 			# -> ext:		[optional] target file extension - Workflow has trouble combining filename and extension
 			# 				if this is present, it will be appended to the end of the filename, otherwise, only filename is used
 			# -> binary:	boolean file type flag
+			# -> overwrite: overwrite or rename existing files?
 			# -> data:		data to apply to action
 			# -> break:		newline on appending?
 
@@ -82,15 +99,30 @@ class requestHandler(server.BaseHTTPRequestHandler):
 
 					action = activity['ACTION']
 
-					# look for extension field
+					# filename field
+					ftarget = ''
+					# extension field
 					fext = ''
 
+					# try separate name and extensions
 					try:
+						ftarget = activity['TARGET']
 						fext = '.' + activity['EXT']
-					except Exception:
-						pass
 
-					target = 'files/' + activity['TARGET'] + fext
+					# then try splitting the full filename into name and extension
+					except Exception:
+						try:
+							fxi = activity['TARGET'].rfind('.')
+							ftarget = activity['TARGET'][:fxi]
+							fext = activity['TARGET'][fxi:]
+						
+						# neither worked, so just place as filename
+						except Exception:
+							ftarget = activity['TARGET']
+							fext = ''
+
+
+					target = 'files/' + ftarget + fext
 
 					if (action == 'CREATE'):
 						open(target, 'w').close()
@@ -98,6 +130,21 @@ class requestHandler(server.BaseHTTPRequestHandler):
 					elif (action == 'WRITE'):
 						data = activity['DATA']
 						binary =  activity['BINARY']
+
+						# default to non-destructive rename mode
+						overwrite = False
+
+						try:
+							overwrite = activity['OVERWRITE']
+						except Exception:
+							pass
+
+						if not overwrite:
+							# look for duplicates
+							i = 0
+							while path.exists(target):
+								i += 1
+								target = 'files/' + ftarget + " (" + str(i) + ")"+ fext
 
 						s.fmod_write(target, data, 'w', binary)
 
@@ -116,7 +163,6 @@ class requestHandler(server.BaseHTTPRequestHandler):
 					elif (action == 'REMOVE'):
 						pass
 
-
 				else:
 					raise Exception
 
@@ -126,9 +172,8 @@ class requestHandler(server.BaseHTTPRequestHandler):
 			s.end_headers()
 			return
 
-		print(sender + " - " + sender_hostname + " - " + str(content_length) + " BYTES - OK")
+		print(sender + " - " + sender_hostname + " - " + src_type + " - " + str(content_length) + " BYTES - OK")
 
-		# s.send_response(status.OK)
 		s.send_response(status.ACCEPTED)
 		s.end_headers()
 		return
