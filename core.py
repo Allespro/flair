@@ -6,14 +6,63 @@ import base64
 import socket
 
 from os import path
+from os import name 
+
+if name != "nt":
+    import fcntl
+    import struct
+
+    def get_interface_ip(ifname):
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        return socket.inet_ntoa(fcntl.ioctl(s.fileno(), 0x8915, struct.pack('256s',
+                                ifname[:15]))[20:24])
+
+def get_lan_ip():
+    ip = socket.gethostbyname(socket.gethostname())
+    if ip.startswith("127.") and name != "nt":
+        interfaces = [
+            "eth0",
+            "eth1",
+            "eth2",
+            "wlan0",
+            "wlan1",
+            "wifi0",
+            "ath0",
+            "ath1",
+            "ppp0",
+            ]
+        for ifname in interfaces:
+            try:
+                ip = get_interface_ip(ifname)
+                break
+            except IOError:
+                pass
+    return ip, ip
+
+
+def get_glob_ip():
+	import requests
+	return "0.0.0.0", requests.get("https://ramziv.com/ip").text
+
+def select_ip_type():
+	print("[1] - Local ip\n[2] - Global ip")
+	chs = int(input("Write here: "))
+	if chs == 1:
+		return get_lan_ip()
+	elif chs == 2:
+		return get_glob_ip()
+	else:
+		exit("Error input!")
 
 def main():
-
-	ip = ('192.168.2.144', 80); # change this to local ip
+	IP = select_ip_type()
+	PORT = 80
+	ip = (IP[0], PORT); # change this to local ip
 
 	httpserver = server.HTTPServer(ip, requestHandler);
 
 	try:
+		print("Server started!\nYour IP:", IP[1]+":"+str(PORT))
 		httpserver.serve_forever()
 	except KeyboardInterrupt:
 		print("Goodbye.")
